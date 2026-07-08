@@ -1161,16 +1161,16 @@
       return true;
     }
 
-    // Gorialis ガイドの実測ゾーン（画像高さに対する割合）
+    // Gorialis ガイドの実測ゾーン（画像高さに対する割合・ガイド線中心を実測）
     // https://x.com/Gorialis/status/1602801061470912513
-    // ・上端: 名前が短いほど 17%、長いほど 38% 付近から表示
-    // ・下端: メニュー閉時は 54% 固定、QM展開時は 64%〜71% まで拡大
+    // ・上端: 名前が短いほど 18.1%、長いほど 39.6% 付近から表示（開閉で不変）
+    // ・下端: メニュー閉時は 55.2% 固定、QM展開時は 65.9%〜69.6% まで拡大
     const NP_ZONES = {
-      topShort: 0.17,
-      topLong: 0.38,
-      bottomClosed: 0.54,
-      bottomOpenShort: 0.64,
-      bottomOpenLong: 0.71,
+      topShort: 0.181,
+      topLong: 0.396,
+      bottomClosed: 0.552,
+      bottomOpenShort: 0.659,
+      bottomOpenLong: 0.696,
     };
 
     /** プレート幅から「名前の長さ」係数(0=短い〜1=長い)を推定し、表示ゾーンを返す */
@@ -1183,13 +1183,13 @@
       return { top, bottom };
     }
 
-    // Gorialis ガイドの VRC+ アイコン円（画像高さに対する割合）
+    // Gorialis ガイドの VRC+ アイコン円（画像高さに対する割合・円フィッティングで実測）
     // 円の中心は常にプレート左端。名前が短いほど画像を大きく覆う
     const VRC_ICON_ZONES = {
-      topShort: 0.273,
-      topLong: 0.493,
-      radiusShort: 0.486,
-      radiusLong: 0.29,
+      topShort: 0.291,
+      topLong: 0.498,
+      radiusShort: 0.483,
+      radiusLong: 0.283,
     };
 
     /** プレート幅から VRC+ アイコン円の位置・半径（画像高さ比）を返す */
@@ -1206,6 +1206,20 @@
     }
 
     /**
+     * 帯・アイコンの「名前の長さ」推定に使う基準幅。
+     * QM展開プレートはフォントが大きく幅が広がるため、そのまま使うと
+     * 同じ名前でも開閉で上限位置がずれる。通常プレートの幅を基準にする。
+     */
+    function bandRefWidth(np) {
+      if (np && np.id === 'nameplateQm') {
+        const normal = document.getElementById('nameplateNormal');
+        const w = normal?.offsetWidth || 0;
+        if (w > 0) return w;
+      }
+      return np ? np.offsetWidth : 0;
+    }
+
+    /**
      * バナー帯の高さを実機と同じ比率で決める:
      * 画像を幅フィットで表示したとき、ガイドのゾーン(top〜bottom)が
      * ちょうどピル上の見える帯に収まる高さにする
@@ -1214,17 +1228,18 @@
       const box = np.querySelector('.np-banner');
       if (!box) return;
       const w = np.offsetWidth;
+      const refW = bandRefWidth(np);
       const imgAspect = imageNatural.w / imageNatural.h;
-      const { top, bottom } = nameplateBand(w, qmOpen);
+      const { top, bottom } = nameplateBand(refW, qmOpen);
       const stripH = Math.max(8, Math.round((w / imgAspect) * (bottom - top)));
       box.style.height = (stripH + npOverlap(np)) + 'px';
 
-      // VRC+ アイコン: ガイドの円（16:9画像基準）をプレート実寸に投影。
+      // VRC+ アイコン: ガイドの円（16:9画像基準）を通常プレート基準幅に投影。
       // 名前が短い（プレートが狭い）ほど画像に対して大きく被る。
-      // ガイドの円はメニュー閉時の下限(54%)基準。アイコンはピルに追従するため
+      // ガイドの円はメニュー閉時の下限基準。アイコンはピルに追従するため
       // ピル上端からのオフセットは QM 開閉によらず一定（QM時は画像の下側を覆う）
-      const h16 = w * 9 / 16;
-      const icon = vrcIconGeom(w);
+      const h16 = refW * 9 / 16;
+      const icon = vrcIconGeom(refW);
       const d = Math.round(2 * icon.radius * h16);
       const dy = Math.round((icon.centerY - NP_ZONES.bottomClosed) * h16);
       np.style.setProperty('--np-pic-size', d + 'px');
@@ -1248,7 +1263,7 @@
 
       const np = box.closest('.nameplate');
       const overlap = np ? npOverlap(np) : 12;
-      const { bottom } = nameplateBand(boxW, qmOpen);
+      const { bottom } = nameplateBand(np ? bandRefWidth(np) : boxW, qmOpen);
       const bottomLinePct = ((boxH - overlap) / boxH) * 100;
       let topPct = bottomLinePct - bottom * heightPct;
       topPct = Math.min(0, Math.max(100 - heightPct, topPct));
