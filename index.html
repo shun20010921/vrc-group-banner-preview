@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VRChat グループバナー プレビュー</title>
+  <style>
+    :root {
+      --bg: #0d0e14;
+      --surface: #161822;
+      --surface2: #1e2030;
+      --border: #2a2d42;
+      --text: #e8e9f0;
+      --muted: #8b8fa8;
+      --accent: #5b8def;
+      --accent2: #7c5ce0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #12141f 0%, #1a1530 100%);
+    }
+
+    header h1 { font-size: 1.35rem; font-weight: 600; }
+    header p { color: var(--muted); font-size: 0.85rem; margin-top: 0.35rem; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: calc(100vh - 90px);
+    }
+
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+    aside {
+      padding: 1.25rem;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      overflow-y: auto;
+    }
+
+    main { padding: 1.25rem 1.5rem 2rem; overflow-y: auto; }
+
+    .panel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .panel h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
+
+    input[type="text"] {
+      width: 100%;
+      margin-bottom: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 0.5rem 0.65rem;
+      font-size: 0.9rem;
+    }
+
+    input[type="range"] { width: 100%; margin: 0.25rem 0 0.5rem; accent-color: var(--accent); }
+
+    .range-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.45rem 0;
+      font-size: 0.85rem;
+    }
+
+    .toggle-row input { width: auto; margin: 0; }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 0.75rem;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(91, 141, 239, 0.06);
+    }
+
+    .drop-zone p { font-size: 0.85rem; color: var(--muted); }
+    .drop-zone strong { color: var(--accent); }
+
+    .note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 0.6rem 0.75rem;
+      background: rgba(91, 141, 239, 0.08);
+      border-radius: 6px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .note a { color: var(--accent); }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    .section-title span {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--muted);
+      background: var(--surface);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1rem;
+    }
+
+    .preview-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .preview-card .card-label {
+      padding: 0.55rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-card .card-label small {
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .preview-card .card-body { padding: 0.85rem; }
+
+    /* ---- Crop viewport (object-fit: cover simulation) ---- */
+    .crop-box {
+      position: relative;
+      overflow: hidden;
+      background: #0a0b10;
+      width: 100%;
+    }
+
+    .crop-box img {
+      position: absolute;
+      display: block;
+      max-width: none;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .crop-box .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .full-preview-wrap {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .full-preview-wrap img { width: 100%; display: block; }
+
+    .zone-overlay { position: absolute; inset: 0; pointer-events: none; }
+
+    .zone {
+      position: absolute;
+      left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 600;
+      opacity: 0.55;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    .zone-red { background: rgba(248, 113, 113, 0.35); }
+    .zone-orange { background: rgba(251, 146, 60, 0.35); }
+    .zone-yellow { background: rgba(250, 204, 21, 0.35); }
+    .zone-green { background: rgba(74, 222, 128, 0.35); }
+
+    /* ---- Mock UIs ---- */
+    .group-icon {
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      overflow: hidden;
+    }
+
+    .group-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+    .mock-group-list {
+      background: #12141c;
+      border-radius: 8px;
+      padding: 0.5rem;
+    }
+
+    .mock-group-list .item-top {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.5rem 0.5rem 0.35rem;
+    }
+
+    .mock-group-list .icon { width: 44px; height: 44px; border-radius: 8px; }
+    .mock-group-list .info { flex: 1; min-width: 0; }
+    .mock-group-list .name { font-size: 0.85rem; font-weight: 600; }
+    .mock-group-list .meta { font-size: 0.7rem; color: var(--muted); margin-top: 0.1rem; }
+    .mock-group-list .banner-strip { border-radius: 4px; overflow: hidden; }
+
+    .mock-group-detail {
+      background: #12141c;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .mock-group-detail .header-body {
+      padding: 0.75rem;
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+    }
+
+    .mock-group-detail .big-icon {
+      width: 52px; height: 52px;
+      border-radius: 10px;
+      margin-top: -28px;
+      border: 3px solid #12141c;
+      font-size: 0.75rem;
+    }
+
+    .mock-group-detail .detail-name { font-size: 0.95rem; font-weight: 700; }
+    .mock-group-detail .detail-tag { font-size: 0.72rem; color: var(--muted); }
+    .mock-group-detail .detail-desc {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+      line-height: 1.4;
+    }
+
+    .mock-qm, .mock-expression {
+      background: rgba(18, 20, 30, 0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 0.75rem;
+      max-width: 300px;
+      margin: 0 auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    .mock-qm .qm-title, .mock-expression .expr-title {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    .mock-qm .qm-banner, .mock-expression .expr-banner {
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .mock-qm .qm-group-name, .mock-expression .expr-group-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .mock-expression .expr-tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .mock-expression .expr-tab {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+    }
+
+    .mock-expression .expr-tab.active {
+      background: rgba(91, 141, 239, 0.25);
+      color: var(--text);
+    }
+
+    .mock-nameplate-scene {
+      background: linear-gradient(180deg, #1a2840 0%, #0f1520 60%, #1a2030 100%);
+      border-radius: 8px;
+      padding: 2rem 1rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 170px;
+    }
+
+    .nameplate {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      position: relative;
+    }
+
+    .nameplate .np-banner-wrap {
+      position: relative;
+    }
+
+    .nameplate .np-banner {
+      border-radius: 6px 6px 0 0;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    }
+
+    .nameplate .np-vrc-pic {
+      display: none;
+      position: absolute;
+      left: 6px;
+      bottom: -16px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid rgba(20, 22, 35, 0.95);
+      background: linear-gradient(135deg, #4a6fa5, #2d4a7a);
+      z-index: 2;
+      overflow: hidden;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .nameplate .np-vrc-pic img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: static;
+    }
+
+    .nameplate.has-vrcplus .np-vrc-pic {
+      display: flex;
+    }
+
+    .nameplate .np-body {
+      background: rgba(20, 22, 35, 0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 0.35rem 0.85rem 0.45rem;
+      backdrop-filter: blur(8px);
+      text-align: center;
+    }
+
+    .nameplate.has-vrcplus .np-body {
+      padding-left: 2.75rem;
+      text-align: left;
+    }
+
+    .nameplate .np-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+    .nameplate .np-status { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
+
+    .nameplate .np-group-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.6rem;
+      color: #a8b4ff;
+      margin-bottom: 0.15rem;
+    }
+
+    .nameplate.qm-open .np-banner { height: 40px !important; }
+    .nameplate.qm-open .np-body { padding: 0.5rem 1rem 0.6rem; }
+    .nameplate.qm-open.has-vrcplus .np-body { padding-left: 3rem; }
+    .nameplate.qm-open .np-name { font-size: 1rem; }
+    .nameplate.qm-open .np-vrc-pic {
+      width: 40px;
+      height: 40px;
+      bottom: -18px;
+    }
+
+    .nameplate-compare {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .nameplate-compare .compare-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .nameplate-compare .compare-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    .info-box {
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: rgba(250, 204, 21, 0.07);
+      border: 1px solid rgba(250, 204, 21, 0.2);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      margin-bottom: 1rem;
+      line-height: 1.55;
+    }
+
+    .info-box strong { color: #facc15; font-weight: 600; }
+
+    .preset-btns {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .preset-btns button {
+      flex: 1;
+      min-width: 0;
+      padding: 0.35rem 0.4rem;
+      font-size: 0.72rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .preset-btns button:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .mock-web {
+      background: #fff;
+      color: #1a1a2e;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .mock-web .web-body { padding: 0.75rem 1rem; }
+    .mock-web .web-name { font-size: 1rem; font-weight: 700; }
+    .mock-web .web-tag { font-size: 0.75rem; color: #666; margin-top: 0.15rem; }
+
+    .mock-web .web-list-item {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      align-items: center;
+    }
+
+    .mock-web .web-list-banner {
+      width: 140px;
+      flex-shrink: 0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .dimmed { opacity: 0.4; pointer-events: none; }
+
+    .disclaimer-banner {
+      background: rgba(248, 113, 113, 0.08);
+      border-bottom: 1px solid rgba(248, 113, 113, 0.2);
+      padding: 0.55rem 2rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .disclaimer-banner strong { color: #fca5a5; font-weight: 600; }
+
+    .site-footer {
+      padding: 1rem 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .site-footer a { color: var(--accent); text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>VRChat グループバナー プレビュー</h1>
+    <p>画像を選択すると、各UIでの見え方を<strong>目安として</strong>確認できます（非公式・VRChat 公式とは無関係）</p>
+  </header>
+
+  <div class="disclaimer-banner">
+    表示はあくまで<strong>目安</strong>です。入力内容・画像はブラウザ内でのみ処理され<strong>保存されません</strong>。
+    サイトへのアクセスは Cloudflare Pages の解析対象です → <a href="privacy.html" style="color:var(--accent)">プライバシーポリシー</a>
+  </div>
+
+  <div class="layout">
+    <aside>
+      <div class="panel">
+        <h2>バナー画像</h2>
+        <div class="drop-zone" id="dropZone">
+          <p><strong>クリック</strong> またはドラッグ＆ドロップ</p>
+          <p>PNG / JPG 推奨（16:9）</p>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </div>
+
+      <div class="panel">
+        <h2>表示設定</h2>
+        <label for="groupName">グループ名</label>
+        <input type="text" id="groupName" value="My VRChat Group" maxlength="40">
+
+        <label for="userName">ユーザー名</label>
+        <input type="text" id="userName" value="Username" maxlength="16">
+        <div class="preset-btns">
+          <button type="button" data-name="A">最短 (A)</button>
+          <button type="button" data-name="Username">普通</button>
+          <button type="button" data-name="VeryLongName">長い名前</button>
+        </div>
+
+        <label for="nameWidth">ネームプレート横幅（自動推定＋手動調整）</label>
+        <input type="range" id="nameWidth" min="70" max="360" value="140">
+        <div class="range-row">
+          <span>短い</span>
+          <span id="nameWidthVal">140px</span>
+          <span>長い</span>
+        </div>
+
+        <div class="toggle-row">
+          <span>VRC+（プロフィール画像）</span>
+          <input type="checkbox" id="vrcPlus">
+        </div>
+
+        <label for="profilePic">プロフィール画像（VRC+ 時）</label>
+        <input type="file" id="profilePic" accept="image/*" style="font-size:0.75rem;margin-bottom:0.75rem">
+
+        <div class="toggle-row">
+          <span>クイックメニュー展開中</span>
+          <input type="checkbox" id="qmOpen">
+        </div>
+
+        <div class="toggle-row">
+          <span>安全ゾーンガイド表示</span>
+          <input type="checkbox" id="showZones" checked>
+        </div>
+      </div>
+
+      <div class="note">
+        ネームプレートのバナーは<strong>名前の長さで幅が変わり</strong>、短いほど横方向に中央寄せで強く切り取られます。VRC+ 時は左の丸アイコン分だけ幅が広がります。参考: <a href="https://github.com/Reava/Resources/releases/tag/JPGuide" target="_blank" rel="noopener">Reava ガイド</a>
+      </div>
+
+      <div class="note" style="margin-top:0.75rem;border-left-color:#8b8fa8;background:rgba(139,143,168,0.08)">
+        入力したグループ名・ユーザー名・画像はすべて端末内で処理され、サーバーには送信・保存されません。
+      </div>
+    </aside>
+
+    <main>
+      <div class="section-title">オリジナル画像 <span>安全ゾーン</span></div>
+      <div class="full-preview-wrap" id="fullPreview">
+        <div class="placeholder" style="padding:3rem;text-align:center;color:var(--muted);background:var(--surface)">
+          バナー画像を選択してください
+        </div>
+      </div>
+
+      <div class="section-title">メニュー内 <span>ゲーム中</span></div>
+      <div class="preview-grid">
+        <div class="preview-card">
+          <div class="card-label">グループ一覧 <small>リスト項目</small></div>
+          <div class="card-body">
+            <div class="mock-group-list">
+              <div class="item-top">
+                <div class="group-icon icon" id="listIcon">GRP</div>
+                <div class="info">
+                  <div class="name" id="listName">My VRChat Group</div>
+                  <div class="meta"><span id="listTag">TAG.0000</span> · 128 members</div>
+                </div>
+              </div>
+              <div class="banner-strip">
+                <div class="crop-box" data-crop="groupList" style="aspect-ratio:5.5/1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-card">
+          <div class="card-label">グループ詳細 <small>ヘッダーバナー</small></div>
+          <div class="card-body">
+            <div class="mock-group-detail">
+              <div class="crop-box" data-crop="groupDetail" style="aspect-ratio:16/5"></div>
+              <div class="header-body">
+                <div class="group-icon big-icon" id="detailIcon">GRP</div>
+                <div>
+                  <div class="detail-name" id="detailName">My VRChat Group</div>
+                  <div class="detail-tag" id="detailTag">TAG.0000</div>
+                  <div class="detail-desc">グループの説明文がここに表示されます</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-card">
+          <div class="card-label">クイックメニュー <small>グループ詳細</small></div>
+          <div class="card-body">
+            <div class="mock-qm">
+              <div class="qm-title">Groups</div>
+              <div class="crop-box qm-banner" data-crop="qmDetail" style="aspect-ratio:3.2/1"></div>
+              <div class="qm-group-name" id="qmName">My VRChat Group</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-card">
+          <div class="card-label">エクスプレッションメニュー <small>グループ詳細</small></div>
+          <div class="card-body">
+            <div class="mock-expression">
+              <div class="expr-tabs">
+                <span class="expr-tab">Expressions</span>
+                <span class="expr-tab active">Groups</span>
+              </div>
+              <div class="crop-box expr-banner" data-crop="exprDetail" style="aspect-ratio:3.2/1"></div>
+              <div class="expr-group-name" id="exprName">My VRChat Group</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">ネームプレート <span>ワールド内</span></div>
+      <div class="info-box" id="npInfoBox">
+        <strong>名前の長さで見え方が大きく変わるのは正しい挙動です。</strong>
+        ネームプレートの横幅＝バナー幅なので、短い名前ほどバナーの左右が切れ、中央付近だけが表示されます。VRC+ ON 時は左の丸がプロフィール画像で、バナー左下に重なります。
+      </div>
+      <div class="preview-grid">
+        <div class="preview-card" id="npCardNormal">
+          <div class="card-label">通常表示 <small>緑ゾーン</small></div>
+          <div class="card-body">
+            <div class="mock-nameplate-scene">
+              <div class="nameplate" id="nameplateNormal">
+                <div class="np-banner-wrap">
+                  <div class="crop-box np-banner" data-crop="nameplateAlways" style="height:26px"></div>
+                  <div class="np-vrc-pic" id="vrcPic1">U</div>
+                </div>
+                <div class="np-body">
+                  <div class="np-group-tag">◆ <span id="npGroupTag1">TAG</span></div>
+                  <div class="np-name" id="npName1">Username</div>
+                  <div class="np-status">Online</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-card" id="npCardQm">
+          <div class="card-label">クイックメニュー展開時 <small>黄＋緑ゾーン</small></div>
+          <div class="card-body">
+            <div class="mock-nameplate-scene">
+              <div class="nameplate qm-open" id="nameplateQm">
+                <div class="np-banner-wrap">
+                  <div class="crop-box np-banner" data-crop="nameplateQm" style="height:40px"></div>
+                  <div class="np-vrc-pic" id="vrcPic2">U</div>
+                </div>
+                <div class="np-body">
+                  <div class="np-group-tag">◆ <span id="npGroupTag2">TAG</span></div>
+                  <div class="np-name" id="npName2">Username</div>
+                  <div class="np-status">Online · World</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-card" style="grid-column: 1 / -1">
+          <div class="card-label">名前の長さ比較 <small>同じバナー・同時表示</small></div>
+          <div class="card-body">
+            <div class="mock-nameplate-scene" style="min-height:200px">
+              <div class="nameplate-compare" id="nameplateCompare"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">ウェブサイト <span>VRChat Home</span></div>
+      <div class="preview-grid">
+        <div class="preview-card">
+          <div class="card-label">グループページ <small>ヘッダー</small></div>
+          <div class="card-body">
+            <div class="mock-web">
+              <div class="crop-box" data-crop="webPage" style="aspect-ratio:16/5"></div>
+              <div class="web-body">
+                <div class="web-name" id="webName">My VRChat Group</div>
+                <div class="web-tag" id="webTag">TAG.0000</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-card">
+          <div class="card-label">グループ一覧 <small>サムネイル</small></div>
+          <div class="card-body">
+            <div class="mock-web">
+              <div class="web-list-item">
+                <div class="crop-box web-list-banner" data-crop="webList" style="aspect-ratio:4.5/1"></div>
+                <div>
+                  <div class="web-name" style="font-size:0.9rem" id="webListName">My VRChat Group</div>
+                  <div class="web-tag" id="webListTag">TAG.0000</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // cover = VRChat標準の object-fit:cover 再現
+    // position: トリミング基準点
+    const CROPS = {
+      groupList:       { mode: 'cover', position: 'center' },
+      groupDetail:     { mode: 'cover', position: 'center' },
+      qmDetail:        { mode: 'cover', position: 'center' },
+      exprDetail:      { mode: 'cover', position: 'center' },
+      nameplateAlways: { mode: 'cover', position: 'center', dynamicWidth: true },
+      nameplateQm:     { mode: 'cover', position: 'center', dynamicWidth: true },
+      webPage:         { mode: 'cover', position: 'center' },
+      webList:         { mode: 'cover', position: 'center' },
+    };
+
+    const SAFE_ZONES = [
+      { y: 0,  h: 17, cls: 'zone-red',    label: '非表示' },
+      { y: 17, h: 3,  cls: 'zone-orange', label: '稀に表示' },
+      { y: 25, h: 17, cls: 'zone-yellow', label: 'QM展開時' },
+      { y: 42, h: 28, cls: 'zone-green',  label: '常時表示' },
+      { y: 70, h: 3,  cls: 'zone-orange', label: '稀に表示' },
+      { y: 73, h: 27, cls: 'zone-red',    label: '非表示' },
+    ];
+
+    let imageUrl = null;
+    let profilePicUrl = null;
+    let imageNatural = { w: 1920, h: 1080 };
+    let manualWidth = false;
+
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
+
+    const COMPARE_NAMES = ['A', 'Username', 'VeryLongName'];
+
+    function initials(name) {
+      return name.split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase() || 'GRP';
+    }
+
+    function userInitial(name) {
+      return [...name][0]?.toUpperCase() || 'U';
+    }
+
+    function tagFromName(name) {
+      const base = name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'TAG';
+      return base + '.0000';
+    }
+
+    function shortTag(name) {
+      return name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'TAG';
+    }
+
+    /** 名前長・VRC+ からネームプレート幅を推定 */
+    function estimateNameplateWidth(userName, vrcPlus) {
+      const len = [...userName].length;
+      let w = 64 + len * 11;
+      if (vrcPlus) w += 38;
+      return Math.min(360, Math.max(vrcPlus ? 110 : 72, w));
+    }
+
+    function getNameplateWidth(userName) {
+      if (userName !== undefined) {
+        return estimateNameplateWidth(userName, $('#vrcPlus').checked);
+      }
+      if (manualWidth) return +$('#nameWidth').value;
+      return estimateNameplateWidth($('#userName').value, $('#vrcPlus').checked);
+    }
+
+    function syncNameplateWidths() {
+      const w = getNameplateWidth() + 'px';
+      const vrcPlus = $('#vrcPlus').checked;
+      ['nameplateNormal', 'nameplateQm'].forEach(id => {
+        const el = document.getElementById(id);
+        el.style.width = w;
+        el.classList.toggle('has-vrcplus', vrcPlus);
+      });
+      updateVrcPics();
+    }
+
+    function updateVrcPics() {
+      const ini = userInitial($('#userName').value);
+      ['vrcPic1', 'vrcPic2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (profilePicUrl) {
+          el.innerHTML = `<img src="${profilePicUrl}" alt="">`;
+        } else {
+          el.textContent = ini;
+        }
+      });
+    }
+
+    /**
+     * 通常UI: object-fit cover
+     */
+    function applyCover(box, position) {
+      const boxW = box.offsetWidth;
+      const boxH = box.offsetHeight;
+      if (!boxW || !boxH) return false;
+
+      const imgAspect = imageNatural.w / imageNatural.h;
+      const boxAspect = boxW / boxH;
+
+      let w, h, left, top;
+
+      if (imgAspect > boxAspect) {
+        h = 100;
+        w = (imgAspect / boxAspect) * 100;
+        top = 0;
+        left = position === 'center' ? (100 - w) / 2 : 0;
+      } else {
+        w = 100;
+        h = (boxAspect / imgAspect) * 100;
+        left = 0;
+        top = position === 'center' ? (100 - h) / 2 : 0;
+      }
+
+      setCropImg(box, w, h, left, top);
+      return true;
+    }
+
+    /**
+     * ネームプレート: 高さに合わせてスケールし、横幅で中央トリミング
+     * → 短い名前ほど左右が切れる（VRChatの実挙動に近い）
+     */
+    function applyNameplateCrop(box, qmOpen) {
+      const boxW = box.offsetWidth;
+      const boxH = box.offsetHeight;
+      if (!boxW || !boxH) return false;
+
+      const imgAspect = imageNatural.w / imageNatural.h;
+      const imgDisplayW = boxH * imgAspect;
+      const widthPct = (imgDisplayW / boxW) * 100;
+      const heightPct = 100;
+      const leftPct = (100 - widthPct) / 2;
+
+      // QM展開時は縦方向にもう少し表示（黄ゾーン相当）
+      let topPct = 0;
+      if (qmOpen) {
+        const extraH = heightPct * 0.35;
+        topPct = -(extraH / 2);
+        setCropImg(box, widthPct, heightPct + extraH, leftPct, topPct);
+      } else {
+        setCropImg(box, widthPct, heightPct, leftPct, topPct);
+      }
+      return true;
+    }
+
+    function setCropImg(box, w, h, left, top) {
+      let img = box.querySelector('img');
+      if (!img) {
+        img = document.createElement('img');
+        img.alt = '';
+        box.innerHTML = '';
+        box.appendChild(img);
+      }
+      img.src = imageUrl;
+      img.style.width = w + '%';
+      img.style.height = h + '%';
+      img.style.left = left + '%';
+      img.style.top = top + '%';
+    }
+
+    function applyCrop(box, cropKey) {
+      const crop = CROPS[cropKey];
+      if (!imageUrl) {
+        box.innerHTML = '<div class="placeholder">画像未選択</div>';
+        return;
+      }
+
+      if (crop.dynamicWidth) {
+        syncNameplateWidths();
+      }
+
+      if (cropKey === 'nameplateAlways' || cropKey === 'nameplateQm') {
+        applyNameplateCrop(box, cropKey === 'nameplateQm');
+      } else {
+        applyCover(box, crop.position);
+      }
+    }
+
+    function renderCompareNameplates() {
+      const container = $('#nameplateCompare');
+      const vrcPlus = $('#vrcPlus').checked;
+      const tag = shortTag($('#groupName').value);
+
+      container.innerHTML = COMPARE_NAMES.map(name => {
+        const w = estimateNameplateWidth(name, vrcPlus);
+        const ini = userInitial(name);
+        const picHtml = profilePicUrl
+          ? `<img src="${profilePicUrl}" alt="">`
+          : ini;
+        const vrcClass = vrcPlus ? 'has-vrcplus' : '';
+        return `
+          <div class="compare-item">
+            <div class="nameplate ${vrcClass}" style="width:${w}px" data-compare-name="${name}">
+              <div class="np-banner-wrap">
+                <div class="crop-box np-banner" data-crop="nameplateAlways" data-compare="1" style="height:26px"></div>
+                <div class="np-vrc-pic">${picHtml}</div>
+              </div>
+              <div class="np-body">
+                <div class="np-group-tag">◆ ${tag}</div>
+                <div class="np-name">${name}</div>
+                <div class="np-status">Online</div>
+              </div>
+            </div>
+            <div class="compare-label">${name} (${w}px)</div>
+          </div>`;
+      }).join('');
+
+      container.querySelectorAll('[data-compare="1"]').forEach(box => applyCrop(box, 'nameplateAlways'));
+    }
+
+    function renderAllCrops() {
+      syncNameplateWidths();
+      $$('[data-crop]:not([data-compare])').forEach(box => applyCrop(box, box.dataset.crop));
+      renderCompareNameplates();
+    }
+
+    function renderFullPreview() {
+      if (!imageUrl) return;
+      const showZones = $('#showZones').checked;
+      const zonesHtml = showZones
+        ? '<div class="zone-overlay">' + SAFE_ZONES.map(z =>
+            `<div class="zone ${z.cls}" style="top:${z.y}%;height:${z.h}%">${z.label}</div>`
+          ).join('') + '</div>'
+        : '';
+      fullPreview.innerHTML = `<img src="${imageUrl}" alt="バナープレビュー">${zonesHtml}`;
+    }
+
+    function updateLabels() {
+      const name = $('#groupName').value || 'My VRChat Group';
+      const user = $('#userName').value || 'Username';
+      const tag = tagFromName(name);
+      const ini = initials(name);
+      const st = shortTag(name);
+      const vrcPlus = $('#vrcPlus').checked;
+
+      $('#listName').textContent = name;
+      $('#listTag').textContent = tag;
+      $('#listIcon').textContent = ini;
+      $('#detailName').textContent = name;
+      $('#detailTag').textContent = tag;
+      $('#detailIcon').textContent = ini;
+      $('#qmName').textContent = name;
+      $('#exprName').textContent = name;
+      $('#webName').textContent = name;
+      $('#webTag').textContent = tag;
+      $('#webListName').textContent = name;
+      $('#webListTag').textContent = tag;
+      $('#npName1').textContent = user;
+      $('#npName2').textContent = user;
+      $('#npGroupTag1').textContent = st;
+      $('#npGroupTag2').textContent = st;
+
+      if (!manualWidth) {
+        const est = estimateNameplateWidth(user, vrcPlus);
+        $('#nameWidth').value = est;
+        $('#nameWidthVal').textContent = est + 'px';
+      }
+
+      updateVrcPics();
+      syncNameplateWidths();
+    }
+
+    function loadImage(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+      imageUrl = URL.createObjectURL(file);
+
+      const probe = new Image();
+      probe.onload = () => {
+        imageNatural = { w: probe.naturalWidth, h: probe.naturalHeight };
+        renderFullPreview();
+        requestAnimationFrame(() => requestAnimationFrame(renderAllCrops));
+      };
+      probe.src = imageUrl;
+    }
+
+    function loadProfilePic(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      if (profilePicUrl) URL.revokeObjectURL(profilePicUrl);
+      profilePicUrl = URL.createObjectURL(file);
+      updateVrcPics();
+      renderCompareNameplates();
+    }
+
+    const dropZone = $('#dropZone');
+    const fileInput = $('#fileInput');
+    const fullPreview = $('#fullPreview');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => loadImage(e.target.files[0]));
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      loadImage(e.dataTransfer.files[0]);
+    });
+
+    ['groupName', 'userName'].forEach(id => {
+      $(`#${id}`).addEventListener('input', () => {
+        manualWidth = false;
+        updateLabels();
+        renderAllCrops();
+      });
+    });
+
+    $$('.preset-btns button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $('#userName').value = btn.dataset.name;
+        manualWidth = false;
+        updateLabels();
+        renderAllCrops();
+      });
+    });
+
+    $('#nameWidth').addEventListener('input', (e) => {
+      manualWidth = true;
+      $('#nameWidthVal').textContent = e.target.value + 'px';
+      renderAllCrops();
+    });
+
+    $('#vrcPlus').addEventListener('change', () => {
+      manualWidth = false;
+      updateLabels();
+      renderAllCrops();
+    });
+
+    $('#profilePic').addEventListener('change', (e) => loadProfilePic(e.target.files[0]));
+
+    $('#showZones').addEventListener('change', renderFullPreview);
+
+    $('#qmOpen').addEventListener('change', (e) => {
+      $('#npCardNormal').classList.toggle('dimmed', e.target.checked);
+      $('#npCardQm').classList.toggle('dimmed', !e.target.checked);
+    });
+
+    new ResizeObserver(() => renderAllCrops()).observe(document.querySelector('main'));
+    window.addEventListener('resize', renderAllCrops);
+
+    updateLabels();
+    syncNameplateWidths();
+  </script>
+
+  <footer class="site-footer">
+    本ツールの表示はあくまで目安です。VRChat は VRChat Ltd. の商標です。<br>
+    <a href="privacy.html">プライバシーポリシー</a>
+  </footer>
+</body>
+</html>
