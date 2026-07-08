@@ -343,51 +343,88 @@
       min-height: 170px;
     }
 
+    /*
+     * 実際のVRChatの構造に合わせたモック:
+     * バナーは名前ピルの背後にあり、ピルの上にはみ出した帯だけが見える。
+     * グループ名・ショートコードはQM展開時のみバナーの上に別ピルで表示。
+     */
     .nameplate {
       display: flex;
       flex-direction: column;
       align-items: stretch;
       position: relative;
       flex-shrink: 0;
-      --np-banner-h: 26px;
+      --np-banner-h: 30px;   /* ピルの上に見える帯の高さ */
+      --np-overlap: 12px;    /* ピルの背後に隠れる部分 */
       --np-pic-size: 34px;
     }
 
     .nameplate.qm-open {
-      --np-banner-h: 40px;
+      --np-banner-h: 48px;
+      --np-overlap: 16px;
       --np-pic-size: 40px;
     }
 
-    .nameplate .np-banner-wrap,
-    .nameplate .np-banner,
-    .nameplate .np-body {
-      width: 100%;
-      box-sizing: border-box;
+    .nameplate .np-group-pill {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(56, 63, 81, 0.97);
+      border-radius: 999px;
+      padding: 0.22rem 0.8rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
 
+    .nameplate .np-group-pill .gp-icon { font-size: 0.65rem; color: #cdd3e5; }
+
     .nameplate .np-banner-wrap {
+      width: 100%;
       position: relative;
       flex-shrink: 0;
     }
 
     .nameplate .np-banner {
-      border-radius: 6px 6px 0 0;
+      border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 2px 12px rgba(0,0,0,0.5);
-      height: var(--np-banner-h);
+      height: calc(var(--np-banner-h) + var(--np-overlap));
+    }
+
+    .nameplate .np-pill {
+      position: relative;
+      z-index: 2;
+      margin-top: calc(-1 * var(--np-overlap));
+      background: rgba(56, 63, 81, 0.97);
+      border-radius: 999px;
+      padding: 0.4rem 1.1rem;
+      text-align: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+      flex-shrink: 0;
+    }
+
+    .nameplate.has-vrcplus .np-pill {
+      padding-left: calc(var(--np-pic-size) / 2 + 1.1rem);
     }
 
     .nameplate .np-vrc-pic {
       display: none;
       position: absolute;
-      left: 6px;
-      top: calc(var(--np-banner-h) - var(--np-pic-size) / 2);
+      left: calc(var(--np-pic-size) / -2);
+      top: 50%;
+      transform: translateY(-50%);
       width: var(--np-pic-size);
       height: var(--np-pic-size);
       border-radius: 50%;
-      border: 2px solid rgba(20, 22, 35, 0.95);
+      border: 2px solid rgba(56, 63, 81, 0.97);
       background: linear-gradient(135deg, #4a6fa5, #2d4a7a);
-      z-index: 2;
       overflow: hidden;
       align-items: center;
       justify-content: center;
@@ -408,38 +445,25 @@
       display: flex;
     }
 
-    .nameplate .np-body {
-      background: rgba(20, 22, 35, 0.92);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-top: none;
-      border-radius: 0 0 8px 8px;
-      padding: 0.35rem 0.85rem 0.45rem;
-      backdrop-filter: blur(8px);
-      text-align: center;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .nameplate.has-vrcplus .np-body {
-      padding: calc(var(--np-pic-size) / 2 + 2px) 0.85rem 0.45rem 2.75rem;
-      text-align: left;
-    }
-
     .nameplate .np-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
-    .nameplate .np-status { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
 
-    .nameplate .np-group-tag {
-      display: block;
-      font-size: 0.6rem;
-      color: #a8b4ff;
-      margin-bottom: 0.1rem;
-      line-height: 1.2;
+    .nameplate .np-status {
+      font-size: 0.7rem;
+      color: #c3c9da;
+      margin-top: 0.1rem;
+      white-space: nowrap;
     }
 
-    .nameplate.qm-open .np-body { padding: 0.5rem 1rem 0.6rem; }
-    .nameplate.qm-open.has-vrcplus .np-body {
-      padding: calc(var(--np-pic-size) / 2 + 4px) 1rem 0.6rem 3rem;
+    .nameplate .np-status::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      margin-right: 0.3rem;
     }
+
     .nameplate.qm-open .np-name { font-size: 1rem; }
 
     .nameplate-compare {
@@ -692,7 +716,7 @@
       <div class="section-title">ネームプレート <span>ワールド内</span></div>
       <div class="info-box" id="npInfoBox">
         <strong>名前の長さで見え方が大きく変わるのは正しい挙動です。</strong>
-        ネームプレートの横幅＝バナー幅で、画像は幅いっぱいに表示されて上下が切り取られます。名前が長い（＝横長になる）ほど縦の表示帯が薄くなります。通常は緑ゾーン付近、クイックメニュー展開時は黄＋緑ゾーン付近が見えます。VRC+ ON 時は左の丸がプロフィール画像で、バナー左下に重なります。
+        バナーは名前ピルの背後に表示され、ピルの上にはみ出した帯だけが見えます。バナー幅は名前ピルの幅に連動するため、名前が長い（＝横長になる）ほど縦の表示帯が薄くなります。通常は緑ゾーン付近、クイックメニュー展開時はより広く（黄＋緑ゾーン付近）表示され、グループ名・ショートコードのピルも上に出ます。VRC+ ON 時は名前の左にプロフィール画像の丸が付きます。
       </div>
       <div class="preview-grid">
         <div class="preview-card" id="npCardNormal">
@@ -703,11 +727,9 @@
                 <div class="np-banner-wrap">
                   <div class="crop-box np-banner" data-crop="nameplateAlways"></div>
                 </div>
-                <div class="np-vrc-pic" id="vrcPic1">U</div>
-                <div class="np-body">
-                  <div class="np-group-tag">◆ <span id="npGroupTag1">TAG</span></div>
+                <div class="np-pill">
+                  <div class="np-vrc-pic" id="vrcPic1">U</div>
                   <div class="np-name" id="npName1">Username</div>
-                  <div class="np-status">Online</div>
                 </div>
               </div>
             </div>
@@ -719,14 +741,18 @@
           <div class="card-body">
             <div class="mock-nameplate-scene">
               <div class="nameplate qm-open" id="nameplateQm">
+                <div class="np-group-pill">
+                  <span id="npGroupName2">My VRChat Group</span>
+                  <span class="gp-icon">◆</span>
+                  <span id="npGroupCode2">MYVR.0000</span>
+                </div>
                 <div class="np-banner-wrap">
                   <div class="crop-box np-banner" data-crop="nameplateQm"></div>
                 </div>
-                <div class="np-vrc-pic" id="vrcPic2">U</div>
-                <div class="np-body">
-                  <div class="np-group-tag">◆ <span id="npGroupTag2">TAG</span></div>
+                <div class="np-pill">
+                  <div class="np-vrc-pic" id="vrcPic2">U</div>
                   <div class="np-name" id="npName2">Username</div>
-                  <div class="np-status">Online · World</div>
+                  <div class="np-status">Online</div>
                 </div>
               </div>
             </div>
@@ -813,18 +839,6 @@
       return base + '.0000';
     }
 
-    function shortTag(name) {
-      return name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'TAG';
-    }
-
-    /** 名前長・VRC+ からネームプレート幅を推定（スライダー初期値用） */
-    function estimateNameplateWidth(userName, vrcPlus) {
-      const len = [...userName].length;
-      let w = 64 + len * 11;
-      if (vrcPlus) w += 38;
-      return Math.min(360, Math.max(vrcPlus ? 110 : 72, w));
-    }
-
     function setNameplateWidth(el, w) {
       const px = Math.round(w) + 'px';
       el.style.width = px;
@@ -844,12 +858,6 @@
       const w = el.offsetWidth;
       setNameplateWidth(el, w);
       return w;
-    }
-
-    function getNameplateWidth(userName) {
-      if (manualWidth) return +$('#nameWidth').value;
-      if (userName !== undefined) return estimateNameplateWidth(userName, $('#vrcPlus').checked);
-      return estimateNameplateWidth($('#userName').value, $('#vrcPlus').checked);
     }
 
     function syncNameplateWidths() {
@@ -970,7 +978,6 @@
     function renderCompareNameplates() {
       const container = $('#nameplateCompare');
       const vrcPlus = $('#vrcPlus').checked;
-      const tag = shortTag($('#groupName').value);
 
       container.innerHTML = COMPARE_NAMES.map(name => {
         const ini = userInitial(name);
@@ -984,11 +991,9 @@
               <div class="np-banner-wrap">
                 <div class="crop-box np-banner" data-crop="nameplateAlways" data-compare="1"></div>
               </div>
-              <div class="np-vrc-pic">${picHtml}</div>
-              <div class="np-body">
-                <div class="np-group-tag">◆ ${tag}</div>
+              <div class="np-pill">
+                <div class="np-vrc-pic">${picHtml}</div>
                 <div class="np-name">${name}</div>
-                <div class="np-status">Online</div>
               </div>
             </div>
             <div class="compare-label" data-compare-label="${name}">${name}</div>
@@ -1022,7 +1027,6 @@
       const user = $('#userName').value || 'Username';
       const tag = tagFromName(name);
       const ini = initials(name);
-      const st = shortTag(name);
       const vrcPlus = $('#vrcPlus').checked;
 
       $('#listName').textContent = name;
@@ -1039,8 +1043,8 @@
       $('#webListTag').textContent = tag;
       $('#npName1').textContent = user;
       $('#npName2').textContent = user;
-      $('#npGroupTag1').textContent = st;
-      $('#npGroupTag2').textContent = st;
+      $('#npGroupName2').textContent = name;
+      $('#npGroupCode2').textContent = tag;
 
       updateVrcPics();
       syncNameplateWidths();
