@@ -468,11 +468,15 @@
 
     .nameplate-compare {
       display: flex;
-      gap: 1rem;
+      gap: 1.5rem;
       justify-content: center;
       flex-wrap: wrap;
       align-items: flex-end;
+      /* 単体プレビューより大きめに表示（レイアウト計算はズーム前のpx基準のまま） */
+      zoom: 1.7;
     }
+
+    @media (max-width: 900px) { .nameplate-compare { zoom: 1.3; } }
 
     .nameplate-compare .compare-item {
       display: flex;
@@ -585,8 +589,6 @@
       overflow: hidden;
     }
 
-    .dimmed { opacity: 0.4; pointer-events: none; }
-
     .disclaimer-banner {
       background: rgba(248, 113, 113, 0.08);
       border-bottom: 1px solid rgba(248, 113, 113, 0.2);
@@ -670,11 +672,6 @@
 
         <label for="profilePic">プロフィール画像（VRC+ 時）</label>
         <input type="file" id="profilePic" accept="image/*" style="font-size:0.75rem;margin-bottom:0.75rem">
-
-        <div class="toggle-row">
-          <span>クイックメニュー展開中</span>
-          <input type="checkbox" id="qmOpen">
-        </div>
       </div>
 
       <div class="note">
@@ -773,7 +770,7 @@
           </div>
         </div>
 
-        <div class="preview-card dimmed" id="npCardQm">
+        <div class="preview-card" id="npCardQm">
           <div class="card-label">クイックメニュー展開時 <small>表示範囲が下に拡大</small></div>
           <div class="card-body">
             <div class="mock-nameplate-scene">
@@ -1214,11 +1211,6 @@
     });
 
     $('#profilePic').addEventListener('change', (e) => loadProfilePic(e.target.files[0]));
-
-    $('#qmOpen').addEventListener('change', (e) => {
-      $('#npCardNormal').classList.toggle('dimmed', e.target.checked);
-      $('#npCardQm').classList.toggle('dimmed', !e.target.checked);
-    });
 
     new ResizeObserver(() => renderAllCrops()).observe(document.querySelector('main'));
     window.addEventListener('resize', renderAllCrops);
