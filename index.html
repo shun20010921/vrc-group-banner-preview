@@ -206,6 +206,9 @@
       font-size: 0.8rem;
     }
 
+    /* ネームプレートのバナー枠は高さが小さく文字が欠けるため文言を出さない */
+    .np-banner .placeholder { font-size: 0; }
+
     /* ---- Mock UIs ---- */
     .group-icon {
       border-radius: 8px;
@@ -614,7 +617,7 @@
       </div>
 
       <div class="note">
-        ネームプレートのバナーは<strong>名前の長さで幅が変わり</strong>、短いほど横方向に中央寄せで強く切り取られます。VRC+ 時は左の丸アイコン分だけ幅が広がります。参考: <a href="https://github.com/Reava/Resources/releases/tag/JPGuide" target="_blank" rel="noopener">Reava ガイド</a>
+        ネームプレートのバナーは<strong>名前の長さで幅が変わり</strong>、横長になるほど画像の上下が強く切り取られます（縦の表示帯が薄くなります）。VRC+ 時は左の丸アイコン分だけ幅が広がります。参考: <a href="https://github.com/Reava/Resources/releases/tag/JPGuide" target="_blank" rel="noopener">Reava ガイド</a>
       </div>
 
       <div class="note" style="margin-top:0.75rem;border-left-color:#8b8fa8;background:rgba(139,143,168,0.08)">
@@ -689,7 +692,7 @@
       <div class="section-title">ネームプレート <span>ワールド内</span></div>
       <div class="info-box" id="npInfoBox">
         <strong>名前の長さで見え方が大きく変わるのは正しい挙動です。</strong>
-        ネームプレートの横幅＝バナー幅なので、短い名前ほどバナーの左右が切れ、中央付近だけが表示されます。VRC+ ON 時は左の丸がプロフィール画像で、バナー左下に重なります。
+        ネームプレートの横幅＝バナー幅で、画像は幅いっぱいに表示されて上下が切り取られます。名前が長い（＝横長になる）ほど縦の表示帯が薄くなります。通常は緑ゾーン付近、クイックメニュー展開時は黄＋緑ゾーン付近が見えます。VRC+ ON 時は左の丸がプロフィール画像で、バナー左下に重なります。
       </div>
       <div class="preview-grid">
         <div class="preview-card" id="npCardNormal">
@@ -711,7 +714,7 @@
           </div>
         </div>
 
-        <div class="preview-card" id="npCardQm">
+        <div class="preview-card dimmed" id="npCardQm">
           <div class="card-label">クイックメニュー展開時 <small>黄＋緑ゾーン</small></div>
           <div class="card-body">
             <div class="mock-nameplate-scene">
@@ -775,14 +778,14 @@
 
   <script>
     // cover = VRChat標準の object-fit:cover 再現
-    // position: トリミング基準点
+    // position: トリミング基準点（nameplate系は applyNameplateCrop で専用処理）
     const CROPS = {
       groupList:       { mode: 'cover', position: 'center' },
       groupDetail:     { mode: 'cover', position: 'center' },
       qmDetail:        { mode: 'cover', position: 'center' },
       exprDetail:      { mode: 'cover', position: 'center' },
-      nameplateAlways: { mode: 'cover', position: 'center', dynamicWidth: true },
-      nameplateQm:     { mode: 'cover', position: 'center', dynamicWidth: true },
+      nameplateAlways: { mode: 'nameplate' },
+      nameplateQm:     { mode: 'nameplate' },
       webPage:         { mode: 'cover', position: 'center' },
       webList:         { mode: 'cover', position: 'center' },
     };
@@ -904,9 +907,13 @@
       return true;
     }
 
+    // Reava ガイドのゾーン中心（画像高さに対する割合）
+    // 通常表示: 緑ゾーン（常時表示）の中心 / QM展開時: 黄＋緑ゾーンの中心
+    const NAMEPLATE_ZONE_CENTER = { normal: 0.60, qm: 0.48 };
+
     /**
-     * ネームプレート: 高さに合わせてスケールし、横幅で中央トリミング
-     * → 短い名前ほど左右が切れる（VRChatの実挙動に近い）
+     * ネームプレート: 画像をバナー枠の幅にフィットさせ、上下をトリミング
+     * → ネームプレートが横長（＝名前が長い）ほど縦の表示帯が薄くなる
      */
     function applyNameplateCrop(box, qmOpen) {
       const boxW = box.offsetWidth;
@@ -914,20 +921,20 @@
       if (!boxW || !boxH) return false;
 
       const imgAspect = imageNatural.w / imageNatural.h;
-      const imgDisplayW = boxH * imgAspect;
-      const widthPct = (imgDisplayW / boxW) * 100;
-      const heightPct = 100;
-      const leftPct = (100 - widthPct) / 2;
+      const boxAspect = boxW / boxH;
 
-      // QM展開時は縦方向にもう少し表示（黄ゾーン相当）
-      let topPct = 0;
-      if (qmOpen) {
-        const extraH = heightPct * 0.35;
-        topPct = -(extraH / 2);
-        setCropImg(box, widthPct, heightPct + extraH, leftPct, topPct);
-      } else {
-        setCropImg(box, widthPct, heightPct, leftPct, topPct);
+      // 画像がバナー枠より横長なら通常の cover（左右トリミング）で埋める
+      if (imgAspect >= boxAspect) {
+        return applyCover(box, 'center');
       }
+
+      const heightPct = (boxAspect / imgAspect) * 100;
+      const center = qmOpen ? NAMEPLATE_ZONE_CENTER.qm : NAMEPLATE_ZONE_CENTER.normal;
+      // ゾーン中心が枠の中央に来るように配置し、画像の範囲内にクランプ
+      let topPct = 50 - center * heightPct;
+      topPct = Math.min(0, Math.max(100 - heightPct, topPct));
+
+      setCropImg(box, 100, heightPct, 0, topPct);
       return true;
     }
 
@@ -953,7 +960,7 @@
         return;
       }
 
-      if (cropKey === 'nameplateAlways' || cropKey === 'nameplateQm') {
+      if (crop.mode === 'nameplate') {
         applyNameplateCrop(box, cropKey === 'nameplateQm');
       } else {
         applyCover(box, crop.position);
@@ -996,7 +1003,11 @@
       });
 
       container.querySelectorAll('[data-compare="1"]').forEach(box => {
-        applyNameplateCrop(box, false);
+        if (!imageUrl) {
+          box.innerHTML = '<div class="placeholder">画像未選択</div>';
+        } else {
+          applyNameplateCrop(box, false);
+        }
       });
     }
 

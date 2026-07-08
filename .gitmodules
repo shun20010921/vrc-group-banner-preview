@@ -1,0 +1,3 @@
+[submodule "external/reava-resources"]
+	path = external/reava-resources
+	url = https://github.com/Reava/Resources.git
