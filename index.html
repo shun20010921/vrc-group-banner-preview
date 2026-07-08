@@ -357,14 +357,23 @@
     }
 
     .nameplate {
-      display: inline-flex;
+      display: flex;
       flex-direction: column;
       align-items: stretch;
       position: relative;
+      flex-shrink: 0;
+    }
+
+    .nameplate .np-banner-wrap,
+    .nameplate .np-banner,
+    .nameplate .np-body {
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .nameplate .np-banner-wrap {
       position: relative;
+      flex-shrink: 0;
     }
 
     .nameplate .np-banner {
@@ -412,6 +421,8 @@
       padding: 0.35rem 0.85rem 0.45rem;
       backdrop-filter: blur(8px);
       text-align: center;
+      overflow: hidden;
+      flex-shrink: 0;
     }
 
     .nameplate.has-vrcplus .np-body {
@@ -548,6 +559,14 @@
 
     .site-footer a { color: var(--accent); text-decoration: none; }
     .site-footer a:hover { text-decoration: underline; }
+
+    .site-footer .footer-links {
+      margin-top: 0.35rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
@@ -829,7 +848,7 @@
       return name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'TAG';
     }
 
-    /** 名前長・VRC+ からネームプレート幅を推定 */
+    /** 名前長・VRC+ からネームプレート幅を推定（スライダー初期値用） */
     function estimateNameplateWidth(userName, vrcPlus) {
       const len = [...userName].length;
       let w = 64 + len * 11;
@@ -837,21 +856,43 @@
       return Math.min(360, Math.max(vrcPlus ? 110 : 72, w));
     }
 
+    function setNameplateWidth(el, w) {
+      const px = Math.round(w) + 'px';
+      el.style.width = px;
+      el.style.minWidth = px;
+      el.style.maxWidth = px;
+    }
+
+    function clearNameplateWidth(el) {
+      el.style.width = '';
+      el.style.minWidth = '';
+      el.style.maxWidth = '';
+    }
+
+    /** 本文の実サイズからネームプレート幅を確定（バナーと同幅にする） */
+    function lockNameplateWidth(el) {
+      clearNameplateWidth(el);
+      const w = el.offsetWidth;
+      setNameplateWidth(el, w);
+      return w;
+    }
+
     function getNameplateWidth(userName) {
-      if (userName !== undefined) {
-        return estimateNameplateWidth(userName, $('#vrcPlus').checked);
-      }
       if (manualWidth) return +$('#nameWidth').value;
+      if (userName !== undefined) return estimateNameplateWidth(userName, $('#vrcPlus').checked);
       return estimateNameplateWidth($('#userName').value, $('#vrcPlus').checked);
     }
 
     function syncNameplateWidths() {
-      const w = getNameplateWidth() + 'px';
       const vrcPlus = $('#vrcPlus').checked;
       ['nameplateNormal', 'nameplateQm'].forEach(id => {
         const el = document.getElementById(id);
-        el.style.width = w;
         el.classList.toggle('has-vrcplus', vrcPlus);
+        if (manualWidth) {
+          setNameplateWidth(el, +$('#nameWidth').value);
+        } else {
+          lockNameplateWidth(el);
+        }
       });
       updateVrcPics();
     }
@@ -946,10 +987,6 @@
         return;
       }
 
-      if (crop.dynamicWidth) {
-        syncNameplateWidths();
-      }
-
       if (cropKey === 'nameplateAlways' || cropKey === 'nameplateQm') {
         applyNameplateCrop(box, cropKey === 'nameplateQm');
       } else {
@@ -963,7 +1000,6 @@
       const tag = shortTag($('#groupName').value);
 
       container.innerHTML = COMPARE_NAMES.map(name => {
-        const w = estimateNameplateWidth(name, vrcPlus);
         const ini = userInitial(name);
         const picHtml = profilePicUrl
           ? `<img src="${profilePicUrl}" alt="">`
@@ -971,7 +1007,7 @@
         const vrcClass = vrcPlus ? 'has-vrcplus' : '';
         return `
           <div class="compare-item">
-            <div class="nameplate ${vrcClass}" style="width:${w}px" data-compare-name="${name}">
+            <div class="nameplate ${vrcClass}" data-compare-name="${name}">
               <div class="np-banner-wrap">
                 <div class="crop-box np-banner" data-crop="nameplateAlways" data-compare="1" style="height:26px"></div>
                 <div class="np-vrc-pic">${picHtml}</div>
@@ -982,11 +1018,20 @@
                 <div class="np-status">Online</div>
               </div>
             </div>
-            <div class="compare-label">${name} (${w}px)</div>
+            <div class="compare-label" data-compare-label="${name}">${name}</div>
           </div>`;
       }).join('');
 
-      container.querySelectorAll('[data-compare="1"]').forEach(box => applyCrop(box, 'nameplateAlways'));
+      container.querySelectorAll('.nameplate').forEach(np => {
+        const name = np.dataset.compareName;
+        const w = lockNameplateWidth(np);
+        const label = container.querySelector(`[data-compare-label="${name}"]`);
+        if (label) label.textContent = `${name} (${w}px)`;
+      });
+
+      container.querySelectorAll('[data-compare="1"]').forEach(box => {
+        applyNameplateCrop(box, false);
+      });
     }
 
     function renderAllCrops() {
@@ -1031,14 +1076,14 @@
       $('#npGroupTag1').textContent = st;
       $('#npGroupTag2').textContent = st;
 
+      updateVrcPics();
+      syncNameplateWidths();
+
       if (!manualWidth) {
-        const est = estimateNameplateWidth(user, vrcPlus);
+        const est = document.getElementById('nameplateNormal').offsetWidth;
         $('#nameWidth').value = est;
         $('#nameWidthVal').textContent = est + 'px';
       }
-
-      updateVrcPics();
-      syncNameplateWidths();
     }
 
     function loadImage(file) {
@@ -1097,7 +1142,11 @@
     $('#nameWidth').addEventListener('input', (e) => {
       manualWidth = true;
       $('#nameWidthVal').textContent = e.target.value + 'px';
-      renderAllCrops();
+      setNameplateWidth(document.getElementById('nameplateNormal'), +e.target.value);
+      setNameplateWidth(document.getElementById('nameplateQm'), +e.target.value);
+      $$('[data-crop="nameplateAlways"]:not([data-compare]), [data-crop="nameplateQm"]:not([data-compare])').forEach(box => {
+        applyNameplateCrop(box, box.dataset.crop === 'nameplateQm');
+      });
     });
 
     $('#vrcPlus').addEventListener('change', () => {
@@ -1124,7 +1173,12 @@
 
   <footer class="site-footer">
     本ツールの表示はあくまで目安です。VRChat は VRChat Ltd. の商標です。<br>
-    <a href="privacy.html">プライバシーポリシー</a>
+    <div class="footer-links">
+      <a href="privacy.html">プライバシーポリシー</a>
+      <a href="https://github.com/shun20010921/vrc-group-banner-preview" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://guetan.dev" target="_blank" rel="noopener">guetan.dev</a>
+    </div>
+    <div style="margin-top:0.5rem">© guetan</div>
   </footer>
 </body>
 </html>
