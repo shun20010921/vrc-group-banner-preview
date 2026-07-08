@@ -499,6 +499,43 @@
 
     .info-box strong { color: #facc15; font-weight: 600; }
 
+    .guide-ref {
+      margin: 1rem 0 0.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .guide-ref summary {
+      cursor: pointer;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      user-select: none;
+    }
+
+    .guide-ref summary:hover { background: rgba(91, 141, 239, 0.06); }
+
+    .guide-ref .guide-ref-body { padding: 0 0.9rem 0.9rem; }
+
+    .guide-ref img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .guide-ref p {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.6rem;
+      line-height: 1.6;
+    }
+
+    .guide-ref a { color: var(--accent); }
+
     .preset-btns {
       display: flex;
       gap: 0.35rem;
@@ -641,7 +678,7 @@
       </div>
 
       <div class="note">
-        ネームプレートのバナーは<strong>名前の長さで幅が変わり</strong>、横長になるほど画像の上下が強く切り取られます（縦の表示帯が薄くなります）。VRC+ 時は左の丸アイコン分だけ幅が広がります。参考: <a href="https://github.com/Reava/Resources/releases/tag/JPGuide" target="_blank" rel="noopener">Reava ガイド</a>
+        ネームプレートのバナーは<strong>名前の長さで幅が変わり</strong>、長い名前ほど画像の縦の表示範囲が狭くなります。VRC+ 時は左の丸アイコン分だけ幅が広がります。参考: <a href="https://github.com/Reava/Resources/releases/tag/JPGuide" target="_blank" rel="noopener">Reava ガイド</a> / <a href="https://x.com/Gorialis/status/1602801061470912513" target="_blank" rel="noopener">Gorialis ガイド</a>
       </div>
 
       <div class="note" style="margin-top:0.75rem;border-left-color:#8b8fa8;background:rgba(139,143,168,0.08)">
@@ -716,11 +753,11 @@
       <div class="section-title">ネームプレート <span>ワールド内</span></div>
       <div class="info-box" id="npInfoBox">
         <strong>名前の長さで見え方が大きく変わるのは正しい挙動です。</strong>
-        バナーは名前ピルの背後に表示され、ピルの上にはみ出した帯だけが見えます。バナー幅は名前ピルの幅に連動するため、名前が長い（＝横長になる）ほど縦の表示帯が薄くなります。通常は緑ゾーン付近、クイックメニュー展開時はより広く（黄＋緑ゾーン付近）表示され、グループ名・ショートコードのピルも上に出ます。VRC+ ON 時は名前の左にプロフィール画像の丸が付きます。
+        バナーは名前ピルの背後に表示され、ピルの上にはみ出した帯だけが見えます。表示されるのは画像の上寄り〜中央の帯で、名前が短いほど上まで広く（高さの約17%〜54%）、長いほど狭く（約38%〜54%）見えます。クイックメニュー展開時は下側も約64〜71%まで広がり、グループ名・ショートコードのピルも上に出ます。VRC+ ON 時は名前の左にプロフィール画像の丸が付きます。（<a href="https://x.com/Gorialis/status/1602801061470912513" target="_blank" rel="noopener" style="color:#facc15">Gorialis さんの実測ガイド</a>準拠）
       </div>
       <div class="preview-grid">
         <div class="preview-card" id="npCardNormal">
-          <div class="card-label">通常表示 <small>緑ゾーン</small></div>
+          <div class="card-label">通常表示 <small>メニューを閉じているとき</small></div>
           <div class="card-body">
             <div class="mock-nameplate-scene">
               <div class="nameplate" id="nameplateNormal">
@@ -737,7 +774,7 @@
         </div>
 
         <div class="preview-card dimmed" id="npCardQm">
-          <div class="card-label">クイックメニュー展開時 <small>黄＋緑ゾーン</small></div>
+          <div class="card-label">クイックメニュー展開時 <small>表示範囲が下に拡大</small></div>
           <div class="card-body">
             <div class="mock-nameplate-scene">
               <div class="nameplate qm-open" id="nameplateQm">
@@ -768,6 +805,17 @@
           </div>
         </div>
       </div>
+
+      <details class="guide-ref">
+        <summary>実機での見え方の例（Gorialis さんのガイド）を表示</summary>
+        <div class="guide-ref-body">
+          <img src="assets/gorialis-guide-examples.jpg" alt="実際の VRChat 各UIでガイド画像がどう切り取られるかのスクリーンショット集" loading="lazy">
+          <p>
+            ガイド画像を各UIで表示した実機スクリーンショット集。名前の長さやメニューの開閉でネームプレートの表示範囲が変わる様子が確認できます。<br>
+            出典: <a href="https://x.com/Gorialis/status/1602801061470912513" target="_blank" rel="noopener">Devon R (@Gorialis) さんのポスト</a>（2枚目・作者の厚意により自由利用可）
+          </p>
+        </div>
+      </details>
 
       <div class="section-title">ウェブサイト <span>VRChat Home</span></div>
       <div class="preview-grid">
@@ -870,6 +918,7 @@
         } else {
           lockNameplateWidth(el);
         }
+        sizeNameplateBanner(el, id === 'nameplateQm');
       });
       updateVrcPics();
     }
@@ -915,13 +964,51 @@
       return true;
     }
 
-    // Reava ガイドのゾーン中心（画像高さに対する割合）
-    // 通常表示: 緑ゾーン（常時表示）の中心 / QM展開時: 黄＋緑ゾーンの中心
-    const NAMEPLATE_ZONE_CENTER = { normal: 0.60, qm: 0.48 };
+    // Gorialis ガイドの実測ゾーン（画像高さに対する割合）
+    // https://x.com/Gorialis/status/1602801061470912513
+    // ・上端: 名前が短いほど 17%、長いほど 38% 付近から表示
+    // ・下端: メニュー閉時は 54% 固定、QM展開時は 64%〜71% まで拡大
+    const NP_ZONES = {
+      topShort: 0.17,
+      topLong: 0.38,
+      bottomClosed: 0.54,
+      bottomOpenShort: 0.64,
+      bottomOpenLong: 0.71,
+    };
+
+    /** プレート幅から「名前の長さ」係数(0=短い〜1=長い)を推定し、表示ゾーンを返す */
+    function nameplateBand(widthPx, qmOpen) {
+      const t = Math.min(1, Math.max(0, (widthPx - 50) / 150));
+      const top = NP_ZONES.topShort + (NP_ZONES.topLong - NP_ZONES.topShort) * t;
+      const bottom = qmOpen
+        ? NP_ZONES.bottomOpenShort + (NP_ZONES.bottomOpenLong - NP_ZONES.bottomOpenShort) * t
+        : NP_ZONES.bottomClosed;
+      return { top, bottom };
+    }
+
+    /** CSS 変数 --np-overlap（名前ピルに隠れる高さ）を読む */
+    function npOverlap(np) {
+      return parseFloat(getComputedStyle(np).getPropertyValue('--np-overlap')) || 12;
+    }
 
     /**
-     * ネームプレート: 画像をバナー枠の幅にフィットさせ、上下をトリミング
-     * → ネームプレートが横長（＝名前が長い）ほど縦の表示帯が薄くなる
+     * バナー帯の高さを実機と同じ比率で決める:
+     * 画像を幅フィットで表示したとき、ガイドのゾーン(top〜bottom)が
+     * ちょうどピル上の見える帯に収まる高さにする
+     */
+    function sizeNameplateBanner(np, qmOpen) {
+      const box = np.querySelector('.np-banner');
+      if (!box) return;
+      const w = np.offsetWidth;
+      const imgAspect = imageNatural.w / imageNatural.h;
+      const { top, bottom } = nameplateBand(w, qmOpen);
+      const stripH = Math.max(8, Math.round((w / imgAspect) * (bottom - top)));
+      box.style.height = (stripH + npOverlap(np)) + 'px';
+    }
+
+    /**
+     * ネームプレート: 画像を幅フィットで表示し（実機同様、左右は切れない）、
+     * ガイドの bottom ラインがピル上端に来るよう上下位置を合わせる
      */
     function applyNameplateCrop(box, qmOpen) {
       const boxW = box.offsetWidth;
@@ -929,17 +1016,16 @@
       if (!boxW || !boxH) return false;
 
       const imgAspect = imageNatural.w / imageNatural.h;
-      const boxAspect = boxW / boxH;
+      const heightPct = (boxW / imgAspect / boxH) * 100;
 
-      // 画像がバナー枠より横長なら通常の cover（左右トリミング）で埋める
-      if (imgAspect >= boxAspect) {
-        return applyCover(box, 'center');
-      }
+      // 幅フィットで枠が埋まらない（極端に横長の画像）場合は cover
+      if (heightPct <= 100) return applyCover(box, 'center');
 
-      const heightPct = (boxAspect / imgAspect) * 100;
-      const center = qmOpen ? NAMEPLATE_ZONE_CENTER.qm : NAMEPLATE_ZONE_CENTER.normal;
-      // ゾーン中心が枠の中央に来るように配置し、画像の範囲内にクランプ
-      let topPct = 50 - center * heightPct;
+      const np = box.closest('.nameplate');
+      const overlap = np ? npOverlap(np) : 12;
+      const { bottom } = nameplateBand(boxW, qmOpen);
+      const bottomLinePct = ((boxH - overlap) / boxH) * 100;
+      let topPct = bottomLinePct - bottom * heightPct;
       topPct = Math.min(0, Math.max(100 - heightPct, topPct));
 
       setCropImg(box, 100, heightPct, 0, topPct);
@@ -1003,6 +1089,7 @@
       container.querySelectorAll('.nameplate').forEach(np => {
         const name = np.dataset.compareName;
         const w = lockNameplateWidth(np);
+        sizeNameplateBanner(np, false);
         const label = container.querySelector(`[data-compare-label="${name}"]`);
         if (label) label.textContent = `${name} (${w}px)`;
       });
@@ -1110,8 +1197,11 @@
     $('#nameWidth').addEventListener('input', (e) => {
       manualWidth = true;
       $('#nameWidthVal').textContent = e.target.value + 'px';
-      setNameplateWidth(document.getElementById('nameplateNormal'), +e.target.value);
-      setNameplateWidth(document.getElementById('nameplateQm'), +e.target.value);
+      ['nameplateNormal', 'nameplateQm'].forEach(id => {
+        const el = document.getElementById(id);
+        setNameplateWidth(el, +e.target.value);
+        sizeNameplateBanner(el, id === 'nameplateQm');
+      });
       $$('[data-crop="nameplateAlways"]:not([data-compare]), [data-crop="nameplateQm"]:not([data-compare])').forEach(box => {
         applyNameplateCrop(box, box.dataset.crop === 'nameplateQm');
       });
