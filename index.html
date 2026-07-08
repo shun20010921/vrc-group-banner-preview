@@ -392,7 +392,8 @@
     }
 
     .nameplate .np-banner {
-      border-radius: 8px;
+      /* 実機ではバナーの下側は角丸にならない（名前ピルの背後に伸びる） */
+      border-radius: 8px 8px 0 0;
       overflow: hidden;
       box-shadow: 0 2px 12px rgba(0,0,0,0.5);
       height: calc(var(--np-banner-h) + var(--np-overlap));
@@ -1058,9 +1059,19 @@
       }
     }
 
+    let compareMarkupKey = null;
+
     function renderCompareNameplates() {
       const container = $('#nameplateCompare');
       const vrcPlus = $('#vrcPlus').checked;
+
+      // 入力が変わったときだけDOMを作り直す（リサイズ毎の再生成によるちらつき防止）
+      const key = `${vrcPlus}|${profilePicUrl || ''}`;
+      if (key === compareMarkupKey) {
+        relayoutCompareNameplates(container);
+        return;
+      }
+      compareMarkupKey = key;
 
       container.innerHTML = COMPARE_NAMES.map(name => {
         const ini = userInitial(name);
@@ -1083,6 +1094,10 @@
           </div>`;
       }).join('');
 
+      relayoutCompareNameplates(container);
+    }
+
+    function relayoutCompareNameplates(container) {
       container.querySelectorAll('.nameplate').forEach(np => {
         const name = np.dataset.compareName;
         const w = lockNameplateWidth(np);
@@ -1093,7 +1108,9 @@
 
       container.querySelectorAll('[data-compare="1"]').forEach(box => {
         if (!imageUrl) {
-          box.innerHTML = '<div class="placeholder">画像未選択</div>';
+          if (!box.querySelector('.placeholder')) {
+            box.innerHTML = '<div class="placeholder">画像未選択</div>';
+          }
         } else {
           applyNameplateCrop(box, false);
         }
