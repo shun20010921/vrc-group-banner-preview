@@ -206,34 +206,6 @@
       font-size: 0.8rem;
     }
 
-    .full-preview-wrap {
-      position: relative;
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    .full-preview-wrap img { width: 100%; display: block; }
-
-    .zone-overlay { position: absolute; inset: 0; pointer-events: none; }
-
-    .zone {
-      position: absolute;
-      left: 0; right: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.65rem;
-      font-weight: 600;
-      opacity: 0.55;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-    }
-
-    .zone-red { background: rgba(248, 113, 113, 0.35); }
-    .zone-orange { background: rgba(251, 146, 60, 0.35); }
-    .zone-yellow { background: rgba(250, 204, 21, 0.35); }
-    .zone-green { background: rgba(74, 222, 128, 0.35); }
-
     /* ---- Mock UIs ---- */
     .group-icon {
       border-radius: 8px;
@@ -271,22 +243,34 @@
     .mock-group-detail {
       background: #12141c;
       border-radius: 8px;
+    }
+
+    .mock-group-detail > .crop-box {
+      border-radius: 8px 8px 0 0;
       overflow: hidden;
     }
 
     .mock-group-detail .header-body {
+      position: relative;
       padding: 0.75rem;
-      display: flex;
-      gap: 0.65rem;
-      align-items: flex-start;
+      padding-top: 0.85rem;
     }
 
     .mock-group-detail .big-icon {
-      width: 52px; height: 52px;
+      position: absolute;
+      left: 0.75rem;
+      top: -26px;
+      width: 52px;
+      height: 52px;
       border-radius: 10px;
-      margin-top: -28px;
       border: 3px solid #12141c;
       font-size: 0.75rem;
+      z-index: 1;
+    }
+
+    .mock-group-detail .header-info {
+      padding-left: calc(52px + 0.65rem);
+      min-width: 0;
     }
 
     .mock-group-detail .detail-name { font-size: 0.95rem; font-weight: 700; }
@@ -362,6 +346,13 @@
       align-items: stretch;
       position: relative;
       flex-shrink: 0;
+      --np-banner-h: 26px;
+      --np-pic-size: 34px;
+    }
+
+    .nameplate.qm-open {
+      --np-banner-h: 40px;
+      --np-pic-size: 40px;
     }
 
     .nameplate .np-banner-wrap,
@@ -380,15 +371,16 @@
       border-radius: 6px 6px 0 0;
       overflow: hidden;
       box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      height: var(--np-banner-h);
     }
 
     .nameplate .np-vrc-pic {
       display: none;
       position: absolute;
       left: 6px;
-      bottom: -16px;
-      width: 34px;
-      height: 34px;
+      top: calc(var(--np-banner-h) - var(--np-pic-size) / 2);
+      width: var(--np-pic-size);
+      height: var(--np-pic-size);
       border-radius: 50%;
       border: 2px solid rgba(20, 22, 35, 0.95);
       background: linear-gradient(135deg, #4a6fa5, #2d4a7a);
@@ -426,7 +418,7 @@
     }
 
     .nameplate.has-vrcplus .np-body {
-      padding-left: 2.75rem;
+      padding: calc(var(--np-pic-size) / 2 + 2px) 0.85rem 0.45rem 2.75rem;
       text-align: left;
     }
 
@@ -434,23 +426,18 @@
     .nameplate .np-status { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
 
     .nameplate .np-group-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
+      display: block;
       font-size: 0.6rem;
       color: #a8b4ff;
-      margin-bottom: 0.15rem;
+      margin-bottom: 0.1rem;
+      line-height: 1.2;
     }
 
-    .nameplate.qm-open .np-banner { height: 40px !important; }
     .nameplate.qm-open .np-body { padding: 0.5rem 1rem 0.6rem; }
-    .nameplate.qm-open.has-vrcplus .np-body { padding-left: 3rem; }
-    .nameplate.qm-open .np-name { font-size: 1rem; }
-    .nameplate.qm-open .np-vrc-pic {
-      width: 40px;
-      height: 40px;
-      bottom: -18px;
+    .nameplate.qm-open.has-vrcplus .np-body {
+      padding: calc(var(--np-pic-size) / 2 + 4px) 1rem 0.6rem 3rem;
     }
+    .nameplate.qm-open .np-name { font-size: 1rem; }
 
     .nameplate-compare {
       display: flex;
@@ -624,11 +611,6 @@
           <span>クイックメニュー展開中</span>
           <input type="checkbox" id="qmOpen">
         </div>
-
-        <div class="toggle-row">
-          <span>安全ゾーンガイド表示</span>
-          <input type="checkbox" id="showZones" checked>
-        </div>
       </div>
 
       <div class="note">
@@ -641,13 +623,6 @@
     </aside>
 
     <main>
-      <div class="section-title">オリジナル画像 <span>安全ゾーン</span></div>
-      <div class="full-preview-wrap" id="fullPreview">
-        <div class="placeholder" style="padding:3rem;text-align:center;color:var(--muted);background:var(--surface)">
-          バナー画像を選択してください
-        </div>
-      </div>
-
       <div class="section-title">メニュー内 <span>ゲーム中</span></div>
       <div class="preview-grid">
         <div class="preview-card">
@@ -675,7 +650,7 @@
               <div class="crop-box" data-crop="groupDetail" style="aspect-ratio:16/5"></div>
               <div class="header-body">
                 <div class="group-icon big-icon" id="detailIcon">GRP</div>
-                <div>
+                <div class="header-info">
                   <div class="detail-name" id="detailName">My VRChat Group</div>
                   <div class="detail-tag" id="detailTag">TAG.0000</div>
                   <div class="detail-desc">グループの説明文がここに表示されます</div>
@@ -723,9 +698,9 @@
             <div class="mock-nameplate-scene">
               <div class="nameplate" id="nameplateNormal">
                 <div class="np-banner-wrap">
-                  <div class="crop-box np-banner" data-crop="nameplateAlways" style="height:26px"></div>
-                  <div class="np-vrc-pic" id="vrcPic1">U</div>
+                  <div class="crop-box np-banner" data-crop="nameplateAlways"></div>
                 </div>
+                <div class="np-vrc-pic" id="vrcPic1">U</div>
                 <div class="np-body">
                   <div class="np-group-tag">◆ <span id="npGroupTag1">TAG</span></div>
                   <div class="np-name" id="npName1">Username</div>
@@ -742,9 +717,9 @@
             <div class="mock-nameplate-scene">
               <div class="nameplate qm-open" id="nameplateQm">
                 <div class="np-banner-wrap">
-                  <div class="crop-box np-banner" data-crop="nameplateQm" style="height:40px"></div>
-                  <div class="np-vrc-pic" id="vrcPic2">U</div>
+                  <div class="crop-box np-banner" data-crop="nameplateQm"></div>
                 </div>
+                <div class="np-vrc-pic" id="vrcPic2">U</div>
                 <div class="np-body">
                   <div class="np-group-tag">◆ <span id="npGroupTag2">TAG</span></div>
                   <div class="np-name" id="npName2">Username</div>
@@ -811,15 +786,6 @@
       webPage:         { mode: 'cover', position: 'center' },
       webList:         { mode: 'cover', position: 'center' },
     };
-
-    const SAFE_ZONES = [
-      { y: 0,  h: 17, cls: 'zone-red',    label: '非表示' },
-      { y: 17, h: 3,  cls: 'zone-orange', label: '稀に表示' },
-      { y: 25, h: 17, cls: 'zone-yellow', label: 'QM展開時' },
-      { y: 42, h: 28, cls: 'zone-green',  label: '常時表示' },
-      { y: 70, h: 3,  cls: 'zone-orange', label: '稀に表示' },
-      { y: 73, h: 27, cls: 'zone-red',    label: '非表示' },
-    ];
 
     let imageUrl = null;
     let profilePicUrl = null;
@@ -1009,9 +975,9 @@
           <div class="compare-item">
             <div class="nameplate ${vrcClass}" data-compare-name="${name}">
               <div class="np-banner-wrap">
-                <div class="crop-box np-banner" data-crop="nameplateAlways" data-compare="1" style="height:26px"></div>
-                <div class="np-vrc-pic">${picHtml}</div>
+                <div class="crop-box np-banner" data-crop="nameplateAlways" data-compare="1"></div>
               </div>
+              <div class="np-vrc-pic">${picHtml}</div>
               <div class="np-body">
                 <div class="np-group-tag">◆ ${tag}</div>
                 <div class="np-name">${name}</div>
@@ -1038,17 +1004,6 @@
       syncNameplateWidths();
       $$('[data-crop]:not([data-compare])').forEach(box => applyCrop(box, box.dataset.crop));
       renderCompareNameplates();
-    }
-
-    function renderFullPreview() {
-      if (!imageUrl) return;
-      const showZones = $('#showZones').checked;
-      const zonesHtml = showZones
-        ? '<div class="zone-overlay">' + SAFE_ZONES.map(z =>
-            `<div class="zone ${z.cls}" style="top:${z.y}%;height:${z.h}%">${z.label}</div>`
-          ).join('') + '</div>'
-        : '';
-      fullPreview.innerHTML = `<img src="${imageUrl}" alt="バナープレビュー">${zonesHtml}`;
     }
 
     function updateLabels() {
@@ -1094,7 +1049,6 @@
       const probe = new Image();
       probe.onload = () => {
         imageNatural = { w: probe.naturalWidth, h: probe.naturalHeight };
-        renderFullPreview();
         requestAnimationFrame(() => requestAnimationFrame(renderAllCrops));
       };
       probe.src = imageUrl;
@@ -1110,7 +1064,6 @@
 
     const dropZone = $('#dropZone');
     const fileInput = $('#fileInput');
-    const fullPreview = $('#fullPreview');
 
     dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => loadImage(e.target.files[0]));
@@ -1156,8 +1109,6 @@
     });
 
     $('#profilePic').addEventListener('change', (e) => loadProfilePic(e.target.files[0]));
-
-    $('#showZones').addEventListener('change', renderFullPreview);
 
     $('#qmOpen').addEventListener('change', (e) => {
       $('#npCardNormal').classList.toggle('dimmed', e.target.checked);
